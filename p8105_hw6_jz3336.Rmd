@@ -46,7 +46,8 @@ homicide_df =
       disposition == "Closed by arrest"      ~ 1,
     )
   ) %>% 
-  filter(city_state != "Tulsa_AL") %>% 
+  filter(city_state != "Tulsa_AL",
+         victim_race %in% c("White", "Black")) %>% 
   select(city_state, resolution, victim_age, victim_race, victim_sex)
 ```
 
@@ -56,10 +57,17 @@ baltimore_df =
   homicide_df %>% 
   filter(city_state == "Baltimore_MD")
 
-glm(resolution ~ victim_age + victim_sex + victim_sex,
+glm(resolution ~ victim_age + victim_race + victim_sex,
     data = baltimore_df,
     family = binomial()) %>% 
-  broom::tidy()
+  broom::tidy() %>% 
+  mutate(
+    OR = exp(estimate),
+    CI_lower = exp(estimate - 1.96 * std.error),
+    CI_upper = exp(estimate + 1.96 * std.error)
+  ) %>% 
+  select(term, OR, starts_with("CI")) %>% 
+  knitr::kable(digit = 3)
 ```
 
 
