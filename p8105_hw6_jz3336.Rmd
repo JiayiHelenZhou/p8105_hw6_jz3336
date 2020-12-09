@@ -9,7 +9,6 @@ output: github_document
 ```{r setup, include = FALSE}
 library(tidyverse)
 library(modelr)
-library(mgcv)
 library(readxl)
 
 knitr::opts_chunk$set(
@@ -190,10 +189,61 @@ cv_df %>%
   mutate(model = fct_inorder(model)) %>% 
   ggplot(aes(x = model, y = rmse)) + geom_violin() +
   labs(
-    title = "Violin plot comparing RMSE value for the three candidate model", 
+    title = "Violin plot comparing RMSE value for the three candidate models", 
     x = "Model", 
     y = "RMSE"
   )
 ```
 __comment__: 
-The best model is model three which used head circumference, length, sex, and all interactions (including the three-way interaction) between these as the predictors.
+The best model is model three which used head circumference, length, sex, and all interactions (including the three-way interaction) between these as the predictors of baby's birth weight.
+
+## Problem 3:
+Set up
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2017-01-01",
+    date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+```
+
+r squared
+```{r}
+#Bootstrapping
+r_squared = 
+  weather_df %>% 
+  bootstrap(n = 5000, id = "strap_number") %>% 
+  mutate(
+    models = map(strap, ~lm(tmax ~ tmin, data = .x) ),
+    results = map(models, broom::glance)) %>% 
+  select(strap_number, results) %>% 
+  unnest(results)
+
+
+#Distribution plot
+r_squared %>% 
+  ggplot(aes(x = r.squared)) +
+  geom_density() +
+  labs(
+    title = " The distribution of r squared"
+  )
+
+#Confidence interval
+r_squared %>% 
+  summarize(
+    CI_lower = quantile(r.squared, 0.025),
+    CI_upper = quantile(r.squared, 0.975)
+  )
+```
+
+
+```{r}
+
+```
+
