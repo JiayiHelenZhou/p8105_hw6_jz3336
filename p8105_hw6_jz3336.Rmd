@@ -237,9 +237,11 @@ r_squared %>%
 #Confidence interval
 r_squared %>% 
   summarize(
+    mean = mean(r.squared),
     CI_lower = quantile(r.squared, 0.025),
     CI_upper = quantile(r.squared, 0.975)
-  )
+  ) %>% 
+  knitr::kable(digits = 3)
 ```
 
 __comment:__
@@ -278,9 +280,11 @@ beta %>%
 #Confidence interval
 beta %>% 
   summarize(
+    mean = mean(logbetas),
     CI_lower = quantile(logbetas, 0.025),
     CI_upper = quantile(logbetas, 0.975)
-  )
+  ) %>% 
+  knitr::kable(digits = 3)
 ```
 
 __comment:__
