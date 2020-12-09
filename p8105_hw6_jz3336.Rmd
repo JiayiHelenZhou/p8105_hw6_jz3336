@@ -101,7 +101,7 @@ model_results_df %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
 
-_Comment:_
+__comment:__
 This is plot of odd ratios which compared white homicide victims to black homicide victims. The odd ratios in the majority of the city sates are larger than 1. Therefore, relative to black homicide victim, homicides in which the victims are white are much more likely to be resolved.
 
 ## Problem 2
@@ -161,5 +161,39 @@ birthweight_df %>%
   )
 ```
 
+Cross validation:
+```{r}
+cv_df = 
+  crossv_mc(birthweight_df, 100) %>% 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble)) %>% 
+  mutate(
+    model_1  = map(train, ~lm(bwt ~ fincome + wtgain, data = .x)),
+    model_2  = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
+    model_3  = map(train, ~lm(bwt ~ blength*bhead*babysex, data = .x))) %>% 
+  mutate(
+    rmse_1 = map2_dbl(model_1, test, ~rmse(model = .x, data = .y)),
+    rmse_2 = map2_dbl(model_2, test, ~rmse(model = .x, data = .y)),
+    rmse_3 = map2_dbl(model_3, test, ~rmse(model = .x, data = .y)))
+```
 
-
+plot showing the distribution of RMSE values for each candidate model:
+```{r}
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") %>% 
+  mutate(model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + geom_violin() +
+  labs(
+    title = "Violin plot comparing RMSE value for the three candidate model", 
+    x = "Model", 
+    y = "RMSE"
+  )
+```
+__comment__: 
+The best model is model three which used head circumference, length, sex, and all interactions (including the three-way interaction) between these as the predictors.
