@@ -70,6 +70,38 @@ glm(resolution ~ victim_age + victim_race + victim_sex,
   knitr::kable(digit = 3)
 ```
 
+Try this across cities:
+```{r}
+model_results_df = 
+  homicide_df %>% 
+  nest(data = -city_state) %>% 
+  mutate(
+    models = map(.x = data, ~glm(resolution ~ victim_age + victim_race + victim_sex, data = .x, family = binomial())),
+    results = map(models, broom::tidy)
+  ) %>% 
+  select(city_state, results) %>% 
+  unnest(results) %>% 
+  mutate(
+    OR = exp(estimate),
+    CI_lower = exp(estimate - 1.96 * std.error),
+    CI_upper = exp(estimate + 1.96 * std.error)
+  ) %>% 
+  select(city_state, term, OR, starts_with("CI"))
+```
+
+Plot:
+```{r}
+model_results_df %>% 
+  filter(term == "victim_raceWhite") %>% 
+  mutate(city_state = fct_reorder(city_state, OR)) %>% 
+  ggplot(aes(x = city_state, y = OR)) +
+  geom_point() + 
+  geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper)) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+_Comment:_
+This is plot of odd ratios which compared white homicide victims to black homicide victims. The odd ratios in the majority of the city sates are larger than 1. Therefore, relative to black homicide victim, homicides in which the victims are white are much more likely to be resolved.
 
 
 
