@@ -243,7 +243,41 @@ r_squared %>%
 ```
 
 
-```{r}
 
+log(beta0*beta1)
+```{r}
+beta = 
+  weather_df %>% 
+  bootstrap(n = 5000, id = "strap_number") %>% 
+  mutate(
+    models = map(strap, ~lm(tmax ~ tmin, data = .x) ),
+    results = map(models, broom::tidy)) %>% 
+  select(strap_number, results) %>% 
+  unnest(results)  %>% 
+  pivot_wider(
+    names_from = term,
+    values_from = estimate) %>% 
+  select(strap_number, `(Intercept)`,  tmin) %>% 
+  group_by(strap_number) %>% 
+  summarise_all(na.omit) %>% 
+  mutate(
+    logbetas = log(`(Intercept)`* tmin)
+  )
+
+##Distribution plot
+beta %>% 
+  ggplot(aes(x = logbetas)) +
+  geom_density() +
+  labs(
+    title = " The distribution of log(beta0*beta1)"
+  )
+
+
+#Confidence interval
+beta %>% 
+  summarize(
+    CI_lower = quantile(logbetas, 0.025),
+    CI_upper = quantile(logbetas, 0.975)
+  )
 ```
 
